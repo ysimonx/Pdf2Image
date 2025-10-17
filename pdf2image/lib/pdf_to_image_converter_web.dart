@@ -44,6 +44,9 @@ class _PdfToImageConverterWebState extends State<PdfToImageConverterWeb> {
           _selectedPage = 1;
           _isLoading = false;
         });
+
+        // Convertir automatiquement la page 1 après le chargement du PDF
+        await _convertPageToImage();
       }
     } catch (e) {
       setState(() {
@@ -194,6 +197,8 @@ class _PdfToImageConverterWebState extends State<PdfToImageConverterWeb> {
                                       _selectedPage = value.toInt();
                                       _renderedImage = null;
                                     });
+                                    // Conversion automatique lors du déplacement du slider
+                                    _convertPageToImage();
                                   },
                                 ),
                               ),
@@ -203,22 +208,6 @@ class _PdfToImageConverterWebState extends State<PdfToImageConverterWeb> {
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 16),
-                          Center(
-                            child: ElevatedButton.icon(
-                              onPressed: _isLoading
-                                  ? null
-                                  : _convertPageToImage,
-                              icon: const Icon(Icons.image),
-                              label: const Text('Convertir en PNG'),
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 16,
-                                ),
-                              ),
-                            ),
                           ),
                         ],
                       ),
