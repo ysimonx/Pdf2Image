@@ -25,6 +25,14 @@ abstract class PdfToImageConverterBaseState<T extends PdfToImageConverterBase> e
   bool isLoading = false;
   @protected
   String? fileName;
+  @protected
+  int selectedDpi = 150; // DPI par défaut
+
+  // Liste des valeurs DPI disponibles
+  static const List<int> availableDpis = [72, 150, 300, 600];
+
+  // Index dans la liste des DPI (par défaut 1 = 150 DPI)
+  int _dpiIndex = 1;
 
   /// Méthode de sélection de fichier PDF commune
   Future<void> pickPdfFile() async {
@@ -72,6 +80,12 @@ abstract class PdfToImageConverterBaseState<T extends PdfToImageConverterBase> e
   /// Permet aux classes dérivées d'effectuer des actions supplémentaires
   void onPdfFileSelected() {}
 
+  /// Calcule le facteur de scaling basé sur le DPI sélectionné
+  /// PDF par défaut utilise 72 DPI
+  double _getDpiScaleFactor() {
+    return selectedDpi / 72.0;
+  }
+
   /// Méthode de conversion de page en image commune
   Future<void> convertPageToImage() async {
     if (pdfDocument == null) return;
@@ -82,9 +96,10 @@ abstract class PdfToImageConverterBaseState<T extends PdfToImageConverterBase> e
 
     try {
       final page = await pdfDocument!.getPage(selectedPage);
+      final scaleFactor = _getDpiScaleFactor();
       final pageImage = await page.render(
-        width: page.width * 2,
-        height: page.height * 2,
+        width: page.width * scaleFactor,
+        height: page.height * scaleFactor,
         format: PdfPageImageFormat.png,
       );
 
@@ -135,6 +150,19 @@ abstract class PdfToImageConverterBaseState<T extends PdfToImageConverterBase> e
   /// Hook appelé lors du changement de sélection de page
   /// Permet aux classes dérivées d'effectuer des actions supplémentaires
   void onPageSelectionChanged() {}
+
+  /// Handler pour le changement de DPI via le slider
+  void onDpiChanged(double value) {
+    setState(() {
+      _dpiIndex = value.toInt();
+      selectedDpi = availableDpis[_dpiIndex];
+      renderedImage = null;
+    });
+    // Reconvertir l'image avec le nouveau DPI
+    if (pdfDocument != null) {
+      convertPageToImage();
+    }
+  }
 
   @override
   void dispose() {
@@ -210,6 +238,57 @@ abstract class PdfToImageConverterBaseState<T extends PdfToImageConverterBase> e
                 Text(
                   'Page $selectedPage / $totalPages',
                   style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Widget de sélection de DPI
+  Widget buildDpiSelectorCard() {
+    if (totalPages == null) return const SizedBox.shrink();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Qualité d\'image (DPI)',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '72 DPI = Basse qualité | 150 DPI = Standard | 300 DPI = Haute qualité | 600 DPI = Très haute qualité',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Slider(
+                    value: _dpiIndex.toDouble(),
+                    min: 0,
+                    max: (availableDpis.length - 1).toDouble(),
+                    divisions: availableDpis.length - 1,
+                    label: '$selectedDpi DPI',
+                    onChanged: onDpiChanged,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                SizedBox(
+                  width: 80,
+                  child: Text(
+                    '$selectedDpi DPI',
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.right,
+                  ),
                 ),
               ],
             ),
@@ -314,6 +393,8 @@ abstract class PdfToImageConverterBaseState<T extends PdfToImageConverterBase> e
                 buildFilePickerCard(),
                 const SizedBox(height: 24),
                 buildPageSelectorCard(),
+                if (totalPages != null) const SizedBox(height: 24),
+                buildDpiSelectorCard(),
                 if (totalPages != null) const SizedBox(height: 24),
                 buildLoadingIndicator(),
                 buildConvertedImageCard(),
