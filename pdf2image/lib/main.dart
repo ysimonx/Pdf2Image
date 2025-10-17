@@ -3,8 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pdfx/pdfx.dart';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 
 void main() {
   runApp(const MyApp());
@@ -123,10 +122,10 @@ class _PdfToImageConverterState extends State<PdfToImageConverter> {
     final base64Image = base64Encode(_renderedImage!);
 
     // Créer un lien de téléchargement
-    final anchor = html.AnchorElement(
-      href: 'data:image/png;base64,$base64Image',
-    )
-      ..setAttribute('download', fileName)
+    // ignore: unused_local_variable
+    final anchor = web.document.createElement('a') as web.HTMLAnchorElement
+      ..href = 'data:image/png;base64,$base64Image'
+      ..download = fileName
       ..click();
 
     // Afficher un message de confirmation
@@ -236,7 +235,9 @@ class _PdfToImageConverterState extends State<PdfToImageConverter> {
                           const SizedBox(height: 16),
                           Center(
                             child: ElevatedButton.icon(
-                              onPressed: _isLoading ? null : _convertPageToImage,
+                              onPressed: _isLoading
+                                  ? null
+                                  : _convertPageToImage,
                               icon: const Icon(Icons.image),
                               label: const Text('Convertir en PNG'),
                               style: ElevatedButton.styleFrom(
@@ -256,13 +257,9 @@ class _PdfToImageConverterState extends State<PdfToImageConverter> {
 
                 // Indicateur de chargement
                 if (_isLoading) ...[
-                  const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  const Center(child: CircularProgressIndicator()),
                   const SizedBox(height: 16),
-                  const Center(
-                    child: Text('Traitement en cours...'),
-                  ),
+                  const Center(child: Text('Traitement en cours...')),
                 ],
 
                 // Affichage de l'image convertie

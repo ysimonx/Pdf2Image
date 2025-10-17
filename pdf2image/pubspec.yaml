@@ -41,6 +41,9 @@ dependencies:
   # Pour la manipulation et le rendu de PDF
   pdfx: ^2.7.0
 
+  # Pour l'interopérabilité web (remplace dart:html)
+  web: ^1.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
